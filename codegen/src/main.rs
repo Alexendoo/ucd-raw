@@ -1,6 +1,6 @@
 extern crate xml;
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
@@ -8,7 +8,7 @@ use std::io::Write;
 use xml::reader::EventReader;
 use xml::reader::XmlEvent;
 
-type Attrs = HashMap<String, String>;
+type Attrs = BTreeMap<String, String>;
 
 fn main() {
     let start = ::std::time::Instant::now();
@@ -20,13 +20,14 @@ fn main() {
     let mut out = BufWriter::new(out);
 
     out.write(
-        b"pub struct Codepoint {
+        b"#[derive(Debug)]
+pub struct Codepoint {
     pub codepoint: i32,
     pub name: &'static str,
     pub age: &'static str,
 }
 
-pub static CODEPOINTS: &'static [Codepoint] = &[
+static CODEPOINTS_ARRAY: [Codepoint; 137439] = [
 ",
     ).unwrap();
 
@@ -37,7 +38,7 @@ pub static CODEPOINTS: &'static [Codepoint] = &[
             XmlEvent::StartElement {
                 name, attributes, ..
             } => {
-                let mut attrs = HashMap::with_capacity(attributes.len());
+                let mut attrs = BTreeMap::new();
                 for attribute in attributes {
                     attrs.insert(attribute.name.local_name, attribute.value);
                 }
@@ -48,7 +49,10 @@ pub static CODEPOINTS: &'static [Codepoint] = &[
         }
     }
 
-    out.write(b"];\n").unwrap();
+    out.write(b"];
+
+pub static CODEPOINTS: &'static [Codepoint] = &CODEPOINTS_ARRAY;
+").unwrap();
     println!("Finished in {:?}", start.elapsed());
 }
 
