@@ -11,10 +11,12 @@ use xml::reader::XmlEvent;
 type Attrs = HashMap<String, String>;
 
 fn main() {
-    let file = File::open("ucd.part.xml").unwrap();
+    let start = ::std::time::Instant::now();
+
+    let file = File::open("ucd.all.flat.xml").unwrap();
     let file = BufReader::new(file);
 
-    let out = File::create("out.test").unwrap();
+    let out = File::create("../src/lib.rs").unwrap();
     let mut out = BufWriter::new(out);
 
     out.write(
@@ -47,6 +49,7 @@ pub static CODEPOINTS: &'static [Codepoint] = &[
     }
 
     out.write(b"];\n").unwrap();
+    println!("Finished in {:?}", start.elapsed());
 }
 
 fn start_element(name: String, attrs: Attrs, out: &mut impl Write) {
