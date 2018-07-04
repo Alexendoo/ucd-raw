@@ -1,355 +1,196 @@
-#![allow(non_snake_case)]
+extern crate xml;
 
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_xml_rs;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::Write;
+use xml::reader::EventReader;
+use xml::reader::XmlEvent;
 
-use serde_xml_rs::deserialize;
-
-// From UAX42 Revision 23 https://www.unicode.org/reports/tr42/tr42-23.html
-
-#[derive(Debug, Deserialize)]
-#[serde(rename = "ucd", rename_all = "kebab-case")]
-struct UCD {
-    description: String,
-    repertoire: Repertoire,
-    blocks: Blocks,
-}
-
-#[derive(Debug, Deserialize)]
-struct Repertoire {
-    #[serde(rename = "$value")]
-    chars: Vec<Codepoints>,
-}
-
-// skipped name-alias
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-enum Codepoints {
-    Char {
-        cp: Option<String>,
-
-        #[serde(rename = "first-cp")]
-        first_cp: Option<String>,
-        #[serde(rename = "last-cp")]
-        last_cp: Option<String>,
-
-        na: String,
-        na1: String,
-        age: String,
-        blk: String,
-        gc: String,
-        ccc: String,
-        bc: String,
-        Bidi_M: String,
-        bmg: String,
-        Bidi_C: String,
-        bpt: String,
-        bpb: String,
-        dt: String,
-        dm: String,
-        CE: String,
-        Comp_Ex: String,
-        NFC_QC: String,
-        NFD_QC: String,
-        NFKC_QC: String,
-        NFKD_QC: String,
-        XO_NFC: String,
-        XO_NFD: String,
-        XO_NFKC: String,
-        XO_NFKD: String,
-        FC_NFKC: String,
-        nt: String,
-        nv: String,
-        jt: String,
-        jg: String,
-        Join_C: String,
-        lb: String,
-        ea: String,
-        Upper: String,
-        Lower: String,
-        OUpper: String,
-        OLower: String,
-        suc: String,
-        slc: String,
-        stc: String,
-        uc: String,
-        lc: String,
-        tc: String,
-        scf: String,
-        cf: String,
-        CI: String,
-        Cased: String,
-        CWCF: String,
-        CWCM: String,
-        CWL: String,
-        CWKCF: String,
-        CWT: String,
-        CWU: String,
-        NFKC_CF: String,
-        sc: String,
-        scx: String,
-        isc: String,
-        hst: String,
-        JSN: String,
-        InSC: String,
-        InMC: Option<String>,
-        InPC: String,
-        IDS: String,
-        OIDS: String,
-        XIDS: String,
-        IDC: String,
-        OIDC: String,
-        XIDC: String,
-        Pat_Syn: String,
-        Pat_WS: String,
-        Dash: String,
-        Hyphen: String,
-        QMark: String,
-        Term: String,
-        STerm: String,
-        Dia: String,
-        Ext: String,
-        PCM: String,
-        SD: String,
-        Alpha: String,
-        OAlpha: String,
-        Math: String,
-        OMath: String,
-        Hex: String,
-        AHex: String,
-        DI: String,
-        ODI: String,
-        LOE: String,
-        WSpace: String,
-        vo: String,
-        RI: String,
-        Gr_Base: String,
-        Gr_Ext: String,
-        OGr_Ext: String,
-        Gr_Link: String,
-        GCB: String,
-        WB: String,
-        SB: String,
-        Ideo: String,
-        UIdeo: String,
-        EqUIdeo: Option<String>,
-        IDSB: String,
-        IDST: String,
-        Radical: String,
-        Dep: String,
-        VS: String,
-        NChar: String,
-        KAccountingNumeric: Option<String>,
-        KAlternateHaYu: Option<String>,
-        kAlternateJEF: Option<String>,
-        kAlternateKangXi: Option<String>,
-        kAlternateMorohashi: Option<String>,
-        kBigFive: Option<String>,
-        kCCCII: Option<String>,
-        kCNS1986: Option<String>,
-        kCNS1992: Option<String>,
-        kCangjie: Option<String>,
-        kCantonese: Option<String>,
-        kCheungBauer: Option<String>,
-        kCheungBauerIndex: Option<String>,
-        kCihaiT: Option<String>,
-        kCompatibilityVariant: Option<String>,
-        kCowles: Option<String>,
-        kDaeJaweon: Option<String>,
-        kDefinition: Option<String>,
-        kEACC: Option<String>,
-        kFenn: Option<String>,
-        kFennIndex: Option<String>,
-        kFourCornerCode: Option<String>,
-        kFrequency: Option<String>,
-        kGB0: Option<String>,
-        kGB1: Option<String>,
-        kGB3: Option<String>,
-        kGB5: Option<String>,
-        kGB7: Option<String>,
-        kGB8: Option<String>,
-        kGradeLevel: Option<String>,
-        kGSR: Option<String>,
-        kHangul: Option<String>,
-        kHanYu: Option<String>,
-        kHanyuPinlu: Option<String>,
-        kHanyuPinyin: Option<String>,
-        kHDZRadBreak: Option<String>,
-        kHKGlyph: Option<String>,
-        kHKSCS: Option<String>,
-        kIBMJapan: Option<String>,
-        kIICore: Option<String>,
-        kIRGDaeJaweon: Option<String>,
-        kIRGDaiKanwaZiten: Option<String>,
-        kIRGHanyuDaZidian: Option<String>,
-        kIRGKangXi: Option<String>,
-        kIRG_GSource: Option<String>,
-        kIRG_HSource: Option<String>,
-        kIRG_JSource: Option<String>,
-        kIRG_KPSource: Option<String>,
-        kIRG_KSource: Option<String>,
-        kIRG_MSource: Option<String>,
-        kIRG_TSource: Option<String>,
-        kIRG_USource: Option<String>,
-        kIRG_VSource: Option<String>,
-        kJa: Option<String>,
-        kJHJ: Option<String>,
-        kJinmeiyoKanji: Option<String>,
-        kJoyoKanji: Option<String>,
-        kKoreanEducationHanja: Option<String>,
-        kKoreanName: Option<String>,
-        kTGH: Option<String>,
-        kJIS0213: Option<String>,
-        kJapaneseKun: Option<String>,
-        kJapaneseOn: Option<String>,
-        kJis0: Option<String>,
-        kJis1: Option<String>,
-        kKPS0: Option<String>,
-        kKPS1: Option<String>,
-        kKSC0: Option<String>,
-        kKSC1: Option<String>,
-        kKangXi: Option<String>,
-        kKarlgren: Option<String>,
-        kKorean: Option<String>,
-        kLau: Option<String>,
-        kMainlandTelegraph: Option<String>,
-        kMandarin: Option<String>,
-        kMatthews: Option<String>,
-        kMeyerWempe: Option<String>,
-        kMorohashi: Option<String>,
-        kNelson: Option<String>,
-        kOtherNumeric: Option<String>,
-        kPhonetic: Option<String>,
-        kPrimaryNumeric: Option<String>,
-        kPseudoGB1: Option<String>,
-        kRSAdobe_Japan1_6: Option<String>,
-        kRSJapanese: Option<String>,
-        kRSKanWa: Option<String>,
-        kRSKangXi: Option<String>,
-        kRSKorean: Option<String>,
-        kRSMerged: Option<String>,
-        kRSUnicode: Option<String>,
-        kSBGY: Option<String>,
-        kSemanticVariant: Option<String>,
-        kSimplifiedVariant: Option<String>,
-        kSpecializedSemanticVariant: Option<String>,
-        kTaiwanTelegraph: Option<String>,
-        kTang: Option<String>,
-        kTotalStrokes: Option<String>,
-        kTraditionalVariant: Option<String>,
-        kVietnamese: Option<String>,
-        kXHC1983: Option<String>,
-        kWubi: Option<String>,
-        kXerox: Option<String>,
-        kZVariant: Option<String>,
-        kRSTUnicode: Option<String>,
-        kTGT_MergedSrc: Option<String>,
-        kSrc_NushuDuben: Option<String>,
-        kReading: Option<String>,
-    },
-    #[serde(rename = "noncharacter", rename_all = "kebab-case")]
-    NonCharacter {
-        age: String,
-        first_cp: String,
-        last_cp: String,
-    },
-    #[serde(rename_all = "kebab-case")]
-    Reserved {
-        age: String,
-        cp: Option<String>,
-        first_cp: Option<String>,
-        last_cp: Option<String>,
-    },
-    #[serde(rename_all = "kebab-case")]
-    Surrogate {
-        age: String,
-        first_cp: String,
-        last_cp: String,
-    },
-}
-
-#[derive(Debug, Deserialize)]
-struct Blocks {
-    #[serde(rename = "$value")]
-    blocks: Vec<Block>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Block {
-    first_cp: String,
-    last_cp: String,
-    name: String,
-}
+type Attrs = HashMap<String, String>;
 
 fn main() {
-    use std::time::Instant;
-    let start = Instant::now();
-    println!("Start!");
-    let raw = include_str!("ucd.all.flat.xml");
-//     let raw = r##"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+    let file = File::open("ucd.part.xml").unwrap();
+    let file = BufReader::new(file);
 
-// <!-- © 2018 Unicode®, Inc. -->
-// <!-- For terms of use, see http://www.unicode.org/terms_of_use.html -->
+    let mut out = File::create("out.test").unwrap();
 
+    let parser = EventReader::new(file);
+    for e in parser {
+        let e = e.unwrap();
+        match e {
+            XmlEvent::StartElement {
+                name, attributes, ..
+            } => {
+                let mut attrs = HashMap::with_capacity(attributes.len());
+                for attribute in attributes {
+                    attrs.insert(attribute.name.local_name, attribute.value);
+                }
 
-// <ucd xmlns="http://www.unicode.org/ns/2003/ucd/1.0">
-//     <description>Unicode 11.0.0</description>
-//     <repertoire>
-//         <char cp="D7FB" age="5.2" na="HANGUL JONGSEONG PHIEUPH-THIEUTH" JSN="" gc="Lo" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="L" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="JT" sc="Hang" scx="Hang" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="T" DI="N" ODI="N" Alpha="Y" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="Y" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="Y" OIDS="N" XIDS="Y" IDC="Y" OIDC="N" XIDC="Y" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="T" WB="LE" SB="LE" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="U" RI="N" blk="Jamo_Ext_B" isc="" na1=""/>
-//         <surrogate first-cp="D800" last-cp="DB7F" age="2.0" na="" JSN="" gc="Cs" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="L" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="SG" sc="Zzzz" scx="Zzzz" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="NA" DI="N" ODI="N" Alpha="N" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="N" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="N" OIDS="N" XIDS="N" IDC="N" OIDC="N" XIDC="N" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="CN" WB="XX" SB="XX" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="R" RI="N" blk="High_Surrogates" isc="" na1=""/>
-//         <char cp="D7FB" age="5.2" na="HANGUL JONGSEONG PHIEUPH-THIEUTH" JSN="" gc="Lo" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="L" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="JT" sc="Hang" scx="Hang" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="T" DI="N" ODI="N" Alpha="Y" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="Y" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="Y" OIDS="N" XIDS="Y" IDC="Y" OIDC="N" XIDC="Y" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="T" WB="LE" SB="LE" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="U" RI="N" blk="Jamo_Ext_B" isc="" na1=""/>
-//         <char cp="D7FB" age="5.2" na="HANGUL JONGSEONG PHIEUPH-THIEUTH" JSN="" gc="Lo" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="L" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="JT" sc="Hang" scx="Hang" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="T" DI="N" ODI="N" Alpha="Y" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="Y" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="Y" OIDS="N" XIDS="Y" IDC="Y" OIDC="N" XIDC="Y" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="T" WB="LE" SB="LE" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="U" RI="N" blk="Jamo_Ext_B" isc="" na1=""/>
-//         <char cp="FDC7" age="1.1" na="ARABIC LIGATURE NOON WITH JEEM WITH YEH FINAL FORM" JSN="" gc="Lo" ccc="0" dt="fin" dm="0646 062C 064A" nt="None" nv="NaN" bc="AL" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="AL" sc="Arab" scx="Arab" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="NA" DI="N" ODI="N" Alpha="Y" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="Y" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="Y" OIDS="N" XIDS="Y" IDC="Y" OIDC="N" XIDC="Y" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="XX" WB="LE" SB="LE" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="N" NFKD_QC="N" XO_NFC="N" XO_NFD="N" XO_NFKC="Y" XO_NFKD="Y" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="Y" CWL="N" CWT="N" CWU="N" NFKC_CF="0646 062C 064A" InSC="Other" InPC="NA" PCM="N" vo="R" RI="N" blk="Arabic_PF_A" isc="" na1=""/>
-//         <reserved first-cp="FDC8" last-cp="FDCF" age="unassigned" na="" JSN="" gc="Cn" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="AL" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="XX" sc="Zzzz" scx="Zzzz" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="NA" DI="N" ODI="N" Alpha="N" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="N" VS="N" Bidi_C="N" Join_C="N" Gr_Base="N" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="N" OIDS="N" XIDS="N" IDC="N" OIDC="N" XIDC="N" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="XX" WB="XX" SB="XX" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="R" RI="N" blk="Arabic_PF_A" isc="" na1=""/>
-//         <noncharacter first-cp="FDD0" last-cp="FDEF" age="3.1" na="" JSN="" gc="Cn" ccc="0" dt="none" dm="#" nt="None" nv="NaN" bc="BN" bpt="n" bpb="#" Bidi_M="N" bmg="" suc="#" slc="#" stc="#" uc="#" lc="#" tc="#" scf="#" cf="#" jt="U" jg="No_Joining_Group" ea="N" lb="XX" sc="Zzzz" scx="Zzzz" Dash="N" WSpace="N" Hyphen="N" QMark="N" Radical="N" Ideo="N" UIdeo="N" IDSB="N" IDST="N" hst="NA" DI="N" ODI="N" Alpha="N" OAlpha="N" Upper="N" OUpper="N" Lower="N" OLower="N" Math="N" OMath="N" Hex="N" AHex="N" NChar="Y" VS="N" Bidi_C="N" Join_C="N" Gr_Base="N" Gr_Ext="N" OGr_Ext="N" Gr_Link="N" STerm="N" Ext="N" Term="N" Dia="N" Dep="N" IDS="N" OIDS="N" XIDS="N" IDC="N" OIDC="N" XIDC="N" SD="N" LOE="N" Pat_WS="N" Pat_Syn="N" GCB="XX" WB="XX" SB="XX" CE="N" Comp_Ex="N" NFC_QC="Y" NFD_QC="Y" NFKC_QC="Y" NFKD_QC="Y" XO_NFC="N" XO_NFD="N" XO_NFKC="N" XO_NFKD="N" FC_NFKC="#" CI="N" Cased="N" CWCF="N" CWCM="N" CWKCF="N" CWL="N" CWT="N" CWU="N" NFKC_CF="#" InSC="Other" InPC="NA" PCM="N" vo="R" RI="N" blk="Arabic_PF_A" isc="" na1=""/>
-//     </repertoire>
-//     <blocks>
-//         <block first-cp="0000" last-cp="007F" name="Basic Latin"/>
-//         <block first-cp="0080" last-cp="00FF" name="Latin-1 Supplement"/>
-//         <block first-cp="0100" last-cp="017F" name="Latin Extended-A"/>
-//         <block first-cp="0180" last-cp="024F" name="Latin Extended-B"/>
-//         <block first-cp="0250" last-cp="02AF" name="IPA Extensions"/>
-//         <block first-cp="02B0" last-cp="02FF" name="Spacing Modifier Letters"/>
-//         <block first-cp="0300" last-cp="036F" name="Combining Diacritical Marks"/>
-//         <block first-cp="0370" last-cp="03FF" name="Greek and Coptic"/>
-//         <block first-cp="0400" last-cp="04FF" name="Cyrillic"/>
-//         <block first-cp="0500" last-cp="052F" name="Cyrillic Supplement"/>
-//         <block first-cp="0530" last-cp="058F" name="Armenian"/>
-//         <block first-cp="0590" last-cp="05FF" name="Hebrew"/>
-//     </blocks>
-//     <named-sequences>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH AE" cps="0626 06D5"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH ALEF" cps="0626 0627"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH ALEF MAKSURA" cps="0626 0649"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH E" cps="0626 06D0"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH OE" cps="0626 06C6"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH U" cps="0626 06C7"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH WAW" cps="0626 0648"/>
-//         <named-sequence name="ARABIC SEQUENCE YEH WITH HAMZA ABOVE WITH YU" cps="0626 06C8"/>
-//     </named-sequences>
-//     <normalization-corrections>
-//         <normalization-correction cp="F951" old="96FB" new="964B" version="3.2.0"/>
-//         <normalization-correction cp="2F868" old="2136A" new="36FC" version="4.0.0"/>
-//         <normalization-correction cp="2F874" old="5F33" new="5F53" version="4.0.0"/>
-//         <normalization-correction cp="2F91F" old="43AB" new="243AB" version="4.0.0"/>
-//         <normalization-correction cp="2F95F" old="7AAE" new="7AEE" version="4.0.0"/>
-//         <normalization-correction cp="2F9BF" old="4D57" new="45D7" version="4.0.0"/>
-//     </normalization-corrections>
-//     <standardized-variants> 
-//         <standardized-variant cps="0030 FE00" desc="short diagonal stroke form" when=""/>
-//         <standardized-variant cps="2205 FE00" desc="zero with long diagonal stroke overlay form" when=""/>
-//         <standardized-variant cps="2229 FE00" desc="with serifs" when=""/>
-//         <standardized-variant cps="222A FE00" desc="with serifs" when=""/>
-//         <standardized-variant cps="2268 FE00" desc="with vertical stroke" when=""/>
-//         <standardized-variant cps="2269 FE00" desc="with vertical stroke" when=""/>
-//     </standardized-variants>
-// </ucd>
-// "##;
-    let ucd: UCD = deserialize(raw.as_bytes()).unwrap();
-    println!("{:#?}", ucd);
+                start_element(name.local_name, attrs, &mut out);
+            }
+            _ => {}
+        }
+    }
+}
 
-    println!("{:?}", start.elapsed());
+fn start_element(name: String, attrs: Attrs, out: &mut impl Write) {
+    match name.as_ref() {
+        "char" if attrs.contains_key("cp") => {
+            write_char(attrs, out);
+        }
+        _ => {}
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum CharOp {
+    Hex,
+    Str,
+    Enum(&'static str),
+
+    Unhandled,
+}
+
+fn indent(by: usize) -> String {
+    " ".repeat(by * 4)
+}
+
+fn write_char(mut attrs: Attrs, out: &mut impl Write) {
+    fix_na(&mut attrs);
+
+    let iter = attrs
+        .into_iter()
+        .map(|(name, value)| {
+            let op = get_char_op(&name);
+            let name = get_char_name(&name);
+
+            (name, value, op)
+        })
+        .filter(|(_, _, op)| op != &CharOp::Unhandled);
+
+    writeln!(out, "Codepoint {{").unwrap();
+    for (name, value, op) in iter {
+        let value = format_op(&op, &value);
+
+        writeln!(out, "{}{}: {}", indent(2), name, value).unwrap();
+    }
+    writeln!(out, "}}").unwrap();
+}
+
+fn fix_na(attrs: &mut Attrs) {
+    let cp = attrs.get("cp").unwrap().clone();
+    let codepoint = usize::from_str_radix(&cp, 16).unwrap();
+
+    // https://www.unicode.org/versions/latest/ch04.pdf
+    enum NamingRule {
+        NR1,
+        NR2(&'static str),
+        NR3,
+        NR4,
+    }
+
+    let nr = match codepoint {
+        0x0Ac00...0x0D7A3 => NamingRule::NR1,
+        0x03400...0x04DB5 => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x04E00...0x09FEA => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x20000...0x2A6D6 => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x2A700...0x2B734 => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x2B740...0x2B81D => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x2B820...0x2CEA1 => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x2CEB0...0x2EBE0 => NamingRule::NR2("CJK UNIFIED IDEOGRAPH-"),
+        0x17000...0x187EC => NamingRule::NR2("TANGUT IDEOGRAPH-"),
+        0x1B170...0x1B2FB => NamingRule::NR2("NUSHU CHARACTER-"),
+        0x0F900...0x0FA6D => NamingRule::NR2("CJK COMPATIBILITY IDEOGRAPH-"),
+        0x0FA70...0x0FAD9 => NamingRule::NR2("CJK COMPATIBILITY IDEOGRAPH-"),
+        0x2F800...0x2FA1D => NamingRule::NR2("CJK COMPATIBILITY IDEOGRAPH-"),
+        _ if attrs.get("na").unwrap() != "" => NamingRule::NR3,
+        _ => NamingRule::NR4,
+    };
+
+    match nr {
+        NamingRule::NR1 => {
+            // These are actually done for us already in the xml file
+        }
+        NamingRule::NR2(prefix) => {
+            attrs.insert("na".into(), format!("{}{}", prefix, cp));
+        }
+        NamingRule::NR3 => {}
+        NamingRule::NR4 => {
+            let na1 = attrs.get("na1").unwrap().clone();
+            if &na1 != "" {
+                attrs.insert("na".into(), na1);
+            };
+        }
+    };
+}
+
+fn get_char_op(name: &str) -> CharOp {
+    use CharOp::*;
+    match name {
+        "cp" => Hex,
+        "age" | "na" => Str,
+        _ => Unhandled,
+    }
+}
+
+fn get_char_name(name: &str) -> String {
+    match name {
+        "cp" => "codepoint",
+        "na" => "name",
+        "blk" => "block",
+        "gc" => "general_category",
+
+        other => other,
+    }.to_owned()
+}
+
+fn format_op(op: &CharOp, value: &str) -> String {
+    use CharOp::*;
+    match op {
+        Hex => format!("0x{}", value),
+        Str => format!("\"{}\"", value),
+        Enum(name) => format!("{}::{}", name, get_enum_name(name, value)),
+        _ => unreachable!(),
+    }
+}
+
+fn get_enum_name(name: &str, value: &str) -> String {
+    match name {
+        "GeneralCategory" => match value {
+            "Lu" => "UppercaseLetter",
+            "Ll" => "LowercaseLetter",
+            "Lt" => "TitlecaseLetter",
+            "Lm" => "ModifierLetter",
+            "Lo" => "OtherLetter",
+            "Mn" => "NonspacingMark",
+            "Mc" => "SpacingMark",
+            "Me" => "EnclosingMark",
+            "Nd" => "DecimalNumber",
+            "Nl" => "LetterNumber",
+            "No" => "OtherNumber",
+            "Pc" => "ConnectorPunctuation",
+            "Pd" => "DashPunctuation",
+            "Ps" => "OpenPunctuation",
+            "Pe" => "ClosePunctuation",
+            "Pi" => "InitialPunctuation",
+            "Pf" => "FinalPunctuation",
+            "Po" => "OtherPunctuation",
+            "Sm" => "MathSymbol",
+            "Sc" => "CurrencySymbol",
+            "Sk" => "ModifierSymbol",
+            "So" => "OtherSymbol",
+            "Zs" => "SpaceSeparator",
+            "Zl" => "LineSeparator",
+            "Zp" => "ParagraphSeparator",
+            "Cc" => "Control",
+            "Cf" => "Format",
+            "Cs" => "Surrogate",
+            "Co" => "PrivateUse",
+            "Cn" => "Unassigned",
+            _ => unreachable!(),
+        },
+
+        _ => unimplemented!(),
+    }.to_owned()
 }
