@@ -3,6 +3,7 @@ extern crate xml;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
+use std::io::BufWriter;
 use std::io::Write;
 use xml::reader::EventReader;
 use xml::reader::XmlEvent;
@@ -13,7 +14,19 @@ fn main() {
     let file = File::open("ucd.part.xml").unwrap();
     let file = BufReader::new(file);
 
-    let mut out = File::create("out.test").unwrap();
+    let out = File::create("out.test").unwrap();
+    let mut out = BufWriter::new(out);
+
+    out.write(
+        b"pub struct Codepoint {
+    pub codepoint: i32,
+    pub name: &'static str,
+    pub age: &'static str,
+}
+
+pub static CODEPOINTS: &'static [Codepoint] = &[
+",
+    ).unwrap();
 
     let parser = EventReader::new(file);
     for e in parser {
@@ -32,6 +45,8 @@ fn main() {
             _ => {}
         }
     }
+
+    out.write(b"];\n").unwrap();
 }
 
 fn start_element(name: String, attrs: Attrs, out: &mut impl Write) {
@@ -69,13 +84,13 @@ fn write_char(mut attrs: Attrs, out: &mut impl Write) {
         })
         .filter(|(_, _, op)| op != &CharOp::Unhandled);
 
-    writeln!(out, "Codepoint {{").unwrap();
+    writeln!(out, "{}Codepoint {{", indent(1)).unwrap();
     for (name, value, op) in iter {
         let value = format_op(&op, &value);
 
-        writeln!(out, "{}{}: {}", indent(2), name, value).unwrap();
+        writeln!(out, "{}{}: {},", indent(2), name, value).unwrap();
     }
-    writeln!(out, "}}").unwrap();
+    writeln!(out, "{}}},", indent(1)).unwrap();
 }
 
 fn fix_na(attrs: &mut Attrs) {
