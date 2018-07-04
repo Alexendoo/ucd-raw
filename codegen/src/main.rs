@@ -20,14 +20,16 @@ fn main() {
     let mut out = BufWriter::new(out);
 
     out.write(
-        b"#[derive(Debug)]
+        b"#![no_std]
+        
+#[derive(Debug)]
 pub struct Codepoint {
     pub codepoint: i32,
     pub name: &'static str,
     pub age: &'static str,
 }
 
-static CODEPOINTS_ARRAY: [Codepoint; 137439] = [
+const CODEPOINTS_ARRAY: [Codepoint; 137439] = [
 ",
     ).unwrap();
 
@@ -51,7 +53,7 @@ static CODEPOINTS_ARRAY: [Codepoint; 137439] = [
 
     out.write(b"];
 
-pub static CODEPOINTS: &'static [Codepoint] = &CODEPOINTS_ARRAY;
+pub const CODEPOINTS: &'static [Codepoint] = &CODEPOINTS_ARRAY;
 ").unwrap();
     println!("Finished in {:?}", start.elapsed());
 }
