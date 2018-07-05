@@ -23,13 +23,13 @@ fn main() {
         b"#![no_std]
         
 #[derive(Debug)]
-pub struct Codepoint {
+pub struct Character {
     pub codepoint: i32,
     pub name: &'static str,
     pub age: &'static str,
 }
 
-const CODEPOINTS_ARRAY: [Codepoint; 137439] = [
+const CHARACTERS_ARRAY: [Character; 137439] = [
 ",
     ).unwrap();
 
@@ -53,7 +53,7 @@ const CODEPOINTS_ARRAY: [Codepoint; 137439] = [
 
     out.write(b"];
 
-pub const CODEPOINTS: &'static [Codepoint] = &CODEPOINTS_ARRAY;
+pub const CHARACTERS: &'static [Character] = &CHARACTERS_ARRAY;
 ").unwrap();
     println!("Finished in {:?}", start.elapsed());
 }
@@ -93,7 +93,7 @@ fn write_char(mut attrs: Attrs, out: &mut impl Write) {
         })
         .filter(|(_, _, op)| op != &CharOp::Unhandled);
 
-    writeln!(out, "{}Codepoint {{", indent(1)).unwrap();
+    writeln!(out, "{}Character {{", indent(1)).unwrap();
     for (name, value, op) in iter {
         let value = format_op(&op, &value);
 
