@@ -24,7 +24,7 @@ fn main() {
         
 #[derive(Debug)]
 pub struct Character {
-    pub codepoint: i32,
+    pub codepoint: u32,
     pub name: &'static str,
     pub age: &'static str,
 }
